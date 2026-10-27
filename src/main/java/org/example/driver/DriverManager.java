@@ -3,15 +3,10 @@ package org.example.driver;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
-import com.microsoft.playwright.Tracing;
-import io.cucumber.java.Scenario;
+import com.microsoft.playwright.Playwright;
 import lombok.Synchronized;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @UtilityClass
@@ -24,6 +19,7 @@ public class DriverManager {
     public static void initDriver(String browserName) {
         if(BROWSER.get() == null) {
             log.info("Driver Instantiation started...");
+            log.info("Driver running on Thread: {}", Thread.currentThread());
             Browser browser = DriverFactory.createDriver(browserName);
             BROWSER.set(browser);
             BrowserContext browserContext = browser.newContext(new Browser.NewContextOptions());
@@ -37,7 +33,6 @@ public class DriverManager {
 
     @Synchronized
     public static void initPage() {
-        Browser browser = BROWSER.get();
         BrowserContext browserContext = ACTIVE_BROWSER_CONTEXT.get();
         Page page = browserContext.newPage();
         ACTIVE_PAGE.set(page);
@@ -56,7 +51,7 @@ public class DriverManager {
     @Synchronized
     public static void closeAllBrowser() {
         ACTIVE_PAGE.get().close();
-        ACTIVE_PAGE.remove();;
+        ACTIVE_PAGE.remove();
         ACTIVE_BROWSER_CONTEXT.get().close();
         ACTIVE_BROWSER_CONTEXT.remove();
         BROWSER.get().close();

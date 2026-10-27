@@ -7,5 +7,5 @@ Feature: This feature file contains login scenarios for GenEvo application.
 
     @TestCase01
     Examples: Login with valid credentials.
-      | username | password    |
+      | username | password  |
       | student  | Password1 |

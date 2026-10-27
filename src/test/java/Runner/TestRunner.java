@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
         features = {"src/test/resources/features"},
         glue = {"Hooks","Stepdefinitions"},
         plugin = {"pretty","summary"},
-        tags = "@TestCase01",
+        tags = "@PracticePage",
         monochrome = true
 )
 public class TestRunner {
