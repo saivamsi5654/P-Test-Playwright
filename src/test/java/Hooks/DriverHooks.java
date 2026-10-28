@@ -7,6 +7,9 @@ import io.cucumber.java.Scenario;
 import lombok.extern.slf4j.Slf4j;
 import org.example.driver.DriverManager;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -16,25 +19,38 @@ public class DriverHooks {
 
     @Before
     public void launchBrowser() {
-        log.info("Launching Browser....");
-        DriverManager.initDriver("chrome");
-        log.info("Initializing Page...");
+        log.info("Launching browser...");
+        DriverManager.initDriver(System.getProperty("browser", "chrome"));
+        log.info("Initializing page...");
         DriverManager.initPage();
-        DriverManager.getBrowserContext().tracing().start(new Tracing.StartOptions().setSnapshots(true).setScreenshots(true));
+        DriverManager.getBrowserContext().tracing().start(
+                new Tracing.StartOptions().setSnapshots(true).setScreenshots(true));
     }
 
     @After
     public void clearBrowserContext(Scenario scenario) {
-        Paths.get("target/traces").toFile().mkdir();
-        String traceName = scenario.getName()
-                .replace(" ", "_")
-                + "_"
-                + LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"))
-                + ".zip";
-        DriverManager.getBrowserContext().tracing().stop(new Tracing.StopOptions().setPath(Paths.get("target/traces/" + traceName)));
-        log.info("Close all Active BrowserContexts and Browser...");
-        DriverManager.closeAllBrowser();
-        log.info("Successfully closed browsers...");
+        try {
+            if (scenario != null) {
+                Path traceDirectory = Paths.get("target", "traces");
+                Files.createDirectories(traceDirectory);
+                String traceName = scenario.getName()
+                        .replaceAll("[^a-zA-Z0-9._-]", "_")
+                        + "_"
+                        + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"))
+                        + ".zip";
+                try {
+                    DriverManager.getBrowserContext().tracing().stop(
+                            new Tracing.StopOptions().setPath(traceDirectory.resolve(traceName)));
+                    log.info("Trace saved to {}", traceDirectory.resolve(traceName));
+                } catch (IllegalStateException e) {
+                    log.debug("Tracing was not started; skipping trace export.", e);
+                }
+            }
+        } catch (IOException | RuntimeException e) {
+            log.warn("Unable to save Playwright trace.", e);
+        } finally {
+            log.info("Closing active page, context, browser, and Playwright...");
+            DriverManager.closeAllBrowser();
+        }
     }
 }
