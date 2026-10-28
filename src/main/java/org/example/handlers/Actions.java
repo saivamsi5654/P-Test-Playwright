@@ -11,6 +11,7 @@ public class Actions {
         return this;
     }
 
+    @UiAction(description = "Click Element: {0}", error = "Unable to click the element")
     public Actions click(Locator locator) {
         locator.click();
         return this;

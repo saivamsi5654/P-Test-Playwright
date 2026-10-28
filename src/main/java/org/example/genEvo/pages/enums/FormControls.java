@@ -5,7 +5,7 @@ public enum FormControls {
     RADIO_BUTTONS("radios"),
     CHECKBOXES("checkboxes"),
     MULTI_SELECTS("multiselects"),
-    TOGGEL_SWITCHES("toggles"),
+    TOGGLE_SWITCHES("toggles"),
     TOOLTIP("tooltip"),
     SHOW_HIDE_ELEMENTS("showhide"),
     HIDDEN_ELEMENTS("hidden-ajax");

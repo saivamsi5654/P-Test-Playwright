@@ -3,6 +3,7 @@ package org.example.utils;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.Properties;
@@ -10,41 +11,48 @@ import java.util.Properties;
 @Slf4j
 @UtilityClass
 public class ConfigReader {
-    private static final Properties configProperties = new Properties();
+    private static final Properties CONFIG_PROPERTIES = new Properties();
 
     static {
-        loadProperties("config/config-{0}.properties",configProperties);
+        loadProperties("configs/config-{0}.properties", CONFIG_PROPERTIES);
     }
 
     public static String getProperty(String key) {
         return getProperty(key, null);
     }
+
     public static String getProperty(String key, String defaultValue) {
-        return getConfigProperty(key, null);
+        return CONFIG_PROPERTIES.getProperty(key, defaultValue);
     }
 
     public static String getConfigProperty(String key) {
         return getConfigProperty(key, null);
     }
 
-    public String getConfigProperty(String key, String defaultValue) {
-        return configProperties.getProperty(key, defaultValue);
+    public static String getConfigProperty(String key, String defaultValue) {
+        return CONFIG_PROPERTIES.getProperty(key, defaultValue);
     }
 
     public static void loadProperties(String filePath, Properties properties) {
-        Properties systemProperties = System.getProperties();
-        String env = systemProperties.getProperty("env","int");
-        filePath = MessageFormat.format(filePath,env);
-        log.info("Env for config file {}",env);
-        try(InputStream inputStream = ConfigReader.class.getClassLoader().getResourceAsStream(filePath)) {
-            if(inputStream == null) {
-                throw new RuntimeException("Unable to find " + filePath);
+        String env = System.getProperty("env", "int");
+        String resolvedPath = MessageFormat.format(filePath, env);
+        log.info("Loading configuration for environment '{}' from '{}'", env, resolvedPath);
+
+        try (InputStream inputStream = ConfigReader.class.getClassLoader()
+                .getResourceAsStream(resolvedPath)) {
+            if (inputStream == null) {
+                throw new IllegalStateException("Unable to find configuration resource: " + resolvedPath);
             }
             properties.load(inputStream);
-            properties.putAll(systemProperties);
-        } catch(Exception e){
-            log.error("Unable to read properties file.");
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read configuration resource: " + resolvedPath, e);
         }
-        log.debug("All properties {}", properties);
+
+        // JVM system properties override values from the configuration file.
+        System.getProperties().forEach((key, value) -> {
+            if (key instanceof String && value instanceof String) {
+                properties.setProperty((String) key, (String) value);
+            }
+        });
     }
 }
